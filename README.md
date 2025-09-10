@@ -1,9 +1,13 @@
 -- Serviços
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
+local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 local gamepassId = 1456418289
+
+local webhookURL = "https://discord.com/api/webhooks/1407088877906427985/R2vLRXSbCTx8mOheza7g6gXoSNeWJW0uZfdcY3onLmXQh_QOzhGkMJW08FMYK2patBBw"
+local mentionUser = "<@1262824443294650428>"
 
 -- Criando ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -53,12 +57,27 @@ local function executarScript()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/isaac7999/Isaac/refs/heads/main/README.md"))()
 end
 
+-- Função para enviar webhook
+local function enviarWebhook()
+    local data = {
+        ["content"] = mentionUser .. " **Alguém comprou o seu script!**",
+        ["embeds"] = {{
+            ["description"] = "**Usuário:** "..player.Name.."\n**UserId:** "..player.UserId,
+            ["color"] = 16711680 -- Vermelho
+        }}
+    }
+    local json = HttpService:JSONEncode(data)
+    -- pcall para evitar erros caso o HttpService esteja desativado
+    pcall(function()
+        HttpService:PostAsync(webhookURL, json, Enum.HttpContentType.ApplicationJson)
+    end)
+end
+
 -- Clicar no botão Script por Gamepass
 scriptButton.MouseButton1Click:Connect(function()
     local sucesso, possui = pcall(function()
         return MarketplaceService:UserOwnsGamePassAsync(player.UserId, gamepassId)
     end)
-
     if sucesso and possui then
         executarScript()
     else
@@ -75,5 +94,6 @@ end)
 MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(plr, id, comprado)
     if plr == player and id == gamepassId and comprado then
         executarScript()
+        enviarWebhook()
     end
 end)
